@@ -3,7 +3,7 @@ from random import random
 from readCSV import read_data
 import sys
 
-steps = 2000
+steps = 5000
 batch_size = 10
 states = (24 + 1) * 60
 sys.setrecursionlimit(states * 200)
@@ -32,7 +32,7 @@ def load_data():
     originDelay = data[2]
 
 
-def init():
+def init(state):
     global states, requestIndex, runways, valueTable
     requestIndex = 0
     runways[0].clear()
@@ -40,12 +40,25 @@ def init():
     waitPlanes.clear()
     optimalValueTable.append(valueTable)
     valueTable = [[0.0] * states, [0.0] * states]
-    average = 0.0
-    for i in range(0, len(optimalValueTable)):
-        average += sum(optimalValueTable[i][0]) + sum(optimalValueTable[i][0])
-    average /= states * len(optimalValueTable)
-    print("reward per action: %f" % (average))
-    average_value.append(average)
+    value_per_episode(state)
+
+
+def value_per_episode(state):
+    if state % 10 == 0:
+        average = 0.0
+        tempValueTable = [[0.0] * states, [0.0] * states]
+        for i in range(0, 2):
+            for j in range(0, states):
+                tmp = 0
+                for k in range(0, len(optimalValueTable)):
+                    tmp += optimalValueTable[k][i][j]
+                if actionCount[i][j] > 0:
+                    tempValueTable[i][j] = tmp / actionCount[i][j]
+        for i in range(0, len(tempValueTable)):
+            average += max(tempValueTable[0][i], tempValueTable[1][i])
+        print("Episode: %d" % state)
+        print("reward per episode: %f" % average)
+        average_value.append(average)
 
 
 def monte_carlo():
@@ -104,7 +117,7 @@ def v(state):
         return valueTable[0][state]
     else:
         # Quick Monte Carlo
-        #if actionCount[0][state] < actionCount[1][state]:
+        # if actionCount[0][state] < actionCount[1][state]:
         # Standard Monte Carlo
         rand = random()
         if rand > 0.5:
@@ -135,7 +148,7 @@ def q(state, action, interval):
 
 # optimal policy
 def optimal_pi(state, planes_to_land):
-    if len(planes_to_land) > 0 and optimalValueTable[0][state] <= optimalValueTable[0][state]:
+    if len(planes_to_land) > 0 and optimalValueTable[0][state] <= optimalValueTable[1][state]:
         if len(runways[0]) == 0:
             runways[0].append(state)
             return [0, 1, 0, 0]
@@ -173,16 +186,15 @@ def agent():
             waitPlanes.pop(0)
             arrival.append(i)
     print("origin sum of delay: %d" % (sum(originDelay)))
-    print("trained sum of delay: %d" % (sum_delay))
-    print("trained sum of interval: %d" % (sum_interval))
+    print("trained sum of delay: %d" % sum_delay)
+    print("trained sum of interval: %d" % sum_interval)
     print(average_value)
 
 
 def train_agent(train_steps):
     for i in range(0, train_steps):
-        print("Episode: %d" % (i + 1))
         v(0)
-        init()
+        init(i)
 
 
 if __name__ == '__main__':
