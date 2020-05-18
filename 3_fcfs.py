@@ -37,17 +37,5 @@ for t in range(1484928000,1484928000+86400):
 			cur.append(max(0,t - int(cur[4])))
 			log.append(cur)
 			last = t
-		if len(q) > 0:
-			cur = q[0]
-			q.pop(0)
-			delta = ""
-			if last != -1:
-				delta = str(t - last)
-			cur[6] = t
-			cur[7] = delta
-			cur[10] = t - int(cur[5])
-			cur.append(max(0,t - int(cur[4])))
-			log.append(cur)
-			last = t
 for x in log:
 	print(",".join([str(y) for y in x]))
